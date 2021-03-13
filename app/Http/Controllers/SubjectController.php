@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Category;
 use App\Subject;
 use App\Answer;
+use App\Company;
 
 class SubjectController extends Controller
 {
@@ -51,7 +52,8 @@ class SubjectController extends Controller
     	$next_subject = $subject->next();
 
     	return response()->json([
-    		'subject' => $next_subject
+    		'subject' => $next_subject,
+            'completed' => $user->company->is_public ? $subject->id === 32 : $subject->id === 69
     	]);
     }
 
@@ -76,19 +78,57 @@ class SubjectController extends Controller
     	return response()->json(compact('categories'));
     }
 
+    public function getAllTopics(Request $request) {
+        $categories = Category::orderBy('id')->get();
+
+        return response()->json(compact('categories'));
+    }
+
     public function getStartPoint(Request $request) {
     	$user = $request->user('api');
 
     	$answer = $user->answers()->orderBy('subject_id', 'DESC')->first();
 
     	if (!$answer) {
+            $subject_id = $user->firstSubject()->id;
+
     		return response()->json([
-    			'subject_id' => $user->firstSubject()->id
+    			'subject_id' => $subject_id,
+                'completed' => $user->company->is_public ? $subject_id === 33 : $subject_id === 70
     		]);
     	} else {
+            $subject_id = $answer->subject_id + 1;
+
     		return response()->json([
-    			'subject_id' => $answer->subject_id + 1
+    			'subject_id' => $subject_id,
+                'completed' => $user->company->is_public ? $subject_id === 33 : $subject_id === 70
     		]);
     	}
+    }
+
+    public function getAnswers(Request $request) {
+        $user = $request->user('api');
+        $answers = $user->answers()->orderBy('subject_id')->get();
+        foreach ($answers as $key => &$answer) {
+            $answer->subject_name = $answer->subject->subject;
+            $answer->category_name = $answer->subject->category->name;
+            $answer->category_id = $answer->subject->category->id;
+        }
+
+        return response()->json(compact('answers'));
+    }
+
+    public function getCompanyAnswers(Request $request, $id) {
+        $company = Company::findOrFail($id);
+        $user = $company->users()->first();
+
+        $answers = $user->answers()->orderBy('subject_id')->get();
+        foreach ($answers as $key => &$answer) {
+            $answer->subject_name = $answer->subject->subject;
+            $answer->category_name = $answer->subject->category->name;
+            $answer->category_id = $answer->subject->category->id;
+        }
+
+        return response()->json(compact('answers'));
     }
 }

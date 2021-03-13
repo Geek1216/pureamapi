@@ -13,4 +13,9 @@ class Answer extends Model
 		'upload',
 		'comment'
     ];
+
+    public function subject()
+    {
+        return $this->belongsTo('App\Subject');
+    }
 }

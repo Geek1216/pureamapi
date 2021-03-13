@@ -16,4 +16,8 @@ class Subject extends Model
 
     	return $subject;
     }
+
+    public function answers() {
+    	return $this->hasMany('App\Answer');
+    }
 }

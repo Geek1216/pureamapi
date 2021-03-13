@@ -14,9 +14,12 @@ Route::middleware('auth')->group(function () {
 	Route::get('/auth/user', 'UserController@getUser');
 });
 
-Route::apiResource('companies', CompanyController::class)->only(['edit', 'update', 'index', 'store'])->middleware('auth');
+Route::apiResource('companies', CompanyController::class)->only(['show', 'update', 'index', 'store', 'destroy'])->middleware('auth');
 
 Route::get('subjects/topics', 'SubjectController@getTopics')->middleware('auth');
+Route::get('subjects/answers', 'SubjectController@getAnswers')->middleware('auth');
+Route::get('subjects/company-answers/{id}', 'SubjectController@getCompanyAnswers')->middleware('auth');
+Route::get('subjects/all-topics', 'SubjectController@getAllTopics')->middleware('auth');
 Route::get('subjects/starting-point', 'SubjectController@getStartPoint')->middleware('auth');
 Route::apiResource('subjects', SubjectController::class)->only(['show'])->middleware('auth');
 Route::post('subjects/submit-answer', 'SubjectController@submitAnswer')->middleware('auth');
