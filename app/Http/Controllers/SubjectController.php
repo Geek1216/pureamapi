@@ -7,6 +7,7 @@ use App\Category;
 use App\Subject;
 use App\Answer;
 use App\Company;
+use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
@@ -32,7 +33,8 @@ class SubjectController extends Controller
 	        $upload->storeAs('uploads/' . $user->id, $fileNameToStore);
     	}
 
-    	$answer = Answer::where('user_id', $user->id)->where('subject_id', $subject->id)->first();
+		$answer = Answer::where('user_id', $user->id)->where('subject_id', $subject->id)->first();
+		$path = $request->file('upload')->store('images', 's3');
 
     	if ($answer) {
     		$answer->update([
@@ -45,7 +47,8 @@ class SubjectController extends Controller
 	    		'subject_id' => $subject->id,
 	    		'yes_no' => $request->yes_no,
 	    		'comment' => $request->comment,
-	    		'upload' => $fileNameToStore
+				#'upload' => $fileNameToStore
+				'upload' => Storage::disk('s3')->url($path),
 	    	]);
     	}
 
