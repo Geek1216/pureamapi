@@ -34,7 +34,10 @@ class SubjectController extends Controller
     	}
 
 		$answer = Answer::where('user_id', $user->id)->where('subject_id', $subject->id)->first();
-		$path = $request->file('upload')->store('images', 's3');
+
+		if ($request->file('upload')) {
+			$path = $request->file('upload')->store('images', 's3');
+		}
 
     	if ($answer) {
     		$answer->update([
@@ -48,7 +51,7 @@ class SubjectController extends Controller
 	    		'yes_no' => $request->yes_no,
 	    		'comment' => $request->comment,
 				#'upload' => $fileNameToStore
-				'upload' => Storage::disk('s3')->url($path),
+				'upload' => isset($path) ? Storage::disk('s3')->url($path) : null,
 	    	]);
     	}
 
