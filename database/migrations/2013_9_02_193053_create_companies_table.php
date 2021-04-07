@@ -17,6 +17,7 @@ class CreateCompaniesTable extends Migration
             $table->id();
             $table->string('name');
             $table->boolean('is_public')->default(false);
+            $table->boolean(('is_completed'))->nullable()->default(false);
 
             $table->timestamps();
         });

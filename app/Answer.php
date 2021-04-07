@@ -14,6 +14,10 @@ class Answer extends Model
 		'comment'
     ];
 
+    public $casts = [
+        'yes_no' => 'integer'
+    ];
+
     public function subject()
     {
         return $this->belongsTo('App\Subject');

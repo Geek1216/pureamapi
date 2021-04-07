@@ -117,6 +117,20 @@ class UserController extends Controller
         return response()->json(compact('user'));
     }
 
+    public function updateProfile(Request $request) {
+        $user = $request->user('api');
+        $data = $request->all();
+        try{
+            $user['name'] = $data['name'];
+            $user['email'] = $data['email'];
+            $user['company_id'] = $data['company'];
+            $user->save();
+            return response()->json("Profile updated. Please login again", 200);
+        } catch (Exception $e) {
+            return response()->json("Can't update profile.", 500);
+        }
+    }
+
     public function updatePassword(Request $request) {
         $validator = Validator::make($request->all(), [ 
             'current_password' => 'required',

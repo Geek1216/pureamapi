@@ -18,3 +18,8 @@ use App\Mail\CustomerInvitation;
 Route::get('/email', function () {
     return new CustomerInvitation("123");
 });
+
+
+// Route::get('/', function () {
+//     return redirect('/due-diligence-staging');
+// });
