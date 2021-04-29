@@ -11,108 +11,122 @@ use Illuminate\Support\Facades\Storage;
 
 class SubjectController extends Controller
 {
-    public function show(Request $request, Subject $subject) {
-    	$subject->category = $subject->category;
+    public function show(Request $request, Subject $subject)
+    {
+        $subject->category = $subject->category;
 
-    	return response()->json(compact('subject'));
+        return response()->json(compact('subject'));
     }
 
-    public function submitAnswer(Request $request) {
-    	$subject = Subject::findOrFail($request->subject_id);
+    public function submitAnswer(Request $request)
+    {
+        $subject = Subject::findOrFail($request->subject_id);
 
-    	$user = $request->user('api');
+        $user = $request->user('api');
 
-    	$upload = $request->file('upload');
-    	$fileNameToStore = null;
+        $answer = Answer::where('user_id', $user->id)->where('subject_id', $subject->id)->first();
 
-    	if ($upload) {
-	        $filename = $upload->getClientOriginalName();
-	        $extension = $request->file('upload')->getClientOriginalExtension();
-	        $fileNameToStore = $filename . '_' . time() . '.' . $extension;    
 
-	        $upload->storeAs('uploads/' . $user->id, $fileNameToStore);
-    	}
 
-		$answer = Answer::where('user_id', $user->id)->where('subject_id', $subject->id)->first();
+        $uploads = [];
+        if ($request->uploadcnt) {
+            for ($i = 0; $i < $request->uploadcnt; $i++) {
+                $upload = $request->file('upload' . $i);
+                $fileNameToStore = null;
 
-		if ($request->file('upload')) {
-			$path = $request->file('upload')->store('images', 's3');
-		}
+                if ($upload) {
+                    $filename = $upload->getClientOriginalName();
+                    $extension = $upload->getClientOriginalExtension();
+                    $fileNameToStore = $filename . '_' . time() . '.' . $extension;
 
-    	if ($answer) {
-    		$answer->update([
-    			'yes_no' => $request->yes_no,
-	    		'comment' => $request->comment,
-	    		'upload' => $fileNameToStore
-    		]);
-    	} else {
-	    	$user->answers()->create([
-	    		'subject_id' => $subject->id,
-	    		'yes_no' => $request->yes_no,
-	    		'comment' => $request->comment,
-				#'upload' => $fileNameToStore
-				'upload' => isset($path) ? Storage::disk('s3')->url($path) : null,
-	    	]);
-    	}
+                    //save in local
+                    $upload->storeAs('uploads/' . $user->id, $fileNameToStore);
+                    //save in s3
+                    $path = $upload->store('images', 's3');
+                }
 
-    	$next_subject = $subject->next();
+                $uploads[] = isset($path) ? Storage::disk('s3')->url($path) : null;
+            }
+        }
 
-    	return response()->json([
-    		'subject' => $next_subject,
+        if ($answer) {
+            $answer->update([
+                'yes_no' => $request->yes_no,
+                'comment' => $request->comment,
+                'upload' => $uploads
+            ]);
+        } else {
+            $user->answers()->create([
+                'subject_id' => $subject->id,
+                'yes_no' => $request->yes_no,
+                'comment' => $request->comment,
+                #'upload' => $fileNameToStore
+                'upload' => $uploads,
+            ]);
+        }
+
+        $next_subject = $subject->next();
+
+        return response()->json([
+            'subject' => $next_subject,
             'completed' => $user->company->is_public ? $subject->id === 32 : $subject->id === 69
-    	]);
+        ]);
     }
 
-    public function getTopics(Request $request) {
-    	$user = $request->user('api');
+    public function getTopics(Request $request)
+    {
+        $user = $request->user('api');
 
-    	$company = $user->company;
+        $company = $user->company;
 
-    	$categories = Category::orderBy('id')->get();
+        $categories = Category::orderBy('id')->get();
 
-    	foreach ($categories as $key => &$category) {
-    		$subject_ids = $category->subjects($company->is_public)->pluck('id');
+        foreach ($categories as $key => &$category) {
+            $subject_ids = $category->subjects($company->is_public)->pluck('id');
 
-    		$answers_count = $user->answers->whereIn('subject_id', $subject_ids)->count();
+            $answers_count = $user->answers->whereIn('subject_id', $subject_ids)->count();
 
-    		if (count($subject_ids) == $answers_count)
-    			$category->completed = true;
-    		else
-    			$category->completed = false;
-    	}
+            if (count($subject_ids) == $answers_count)
+                $category->completed = true;
+            else
+                $category->completed = false;
+        }
 
-    	return response()->json(compact('categories'));
+        return response()->json(compact('categories'));
     }
 
-    public function getAllTopics(Request $request) {
+    public function getAllTopics(Request $request)
+    {
         $categories = Category::orderBy('id')->get();
 
         return response()->json(compact('categories'));
     }
 
-    public function getStartPoint(Request $request) {
-    	$user = $request->user('api');
+    public function getStartPoint(Request $request)
+    {
+        $user = $request->user('api');
 
-    	$answer = $user->answers()->orderBy('subject_id', 'DESC')->first();
+        $answer = $user->answers()->orderBy('subject_id', 'DESC')->first();
 
-    	if (!$answer) {
+        if (!$answer) {
             $subject_id = $user->firstSubject()->id;
 
-    		return response()->json([
-    			'subject_id' => $subject_id,
+            return response()->json([
+                'subject_id' => $subject_id,
                 'completed' => $user->company->is_public ? $subject_id === 33 : $subject_id === 70
-    		]);
-    	} else {
+            ]);
+        } else {
             $subject_id = $answer->subject_id + 1;
 
-    		return response()->json([
-    			'subject_id' => $subject_id,
+            return response()->json([
+                'subject_id' => $subject_id,
                 'completed' => $user->company->is_public ? $subject_id === 33 : $subject_id === 70
-    		]);
-    	}
+            ]);
+        }
     }
 
-    public function getAnswers(Request $request) {
+    public function getAnswers(Request $request)
+    {
         $user = $request->user('api');
         $answers = $user->answers()->orderBy('subject_id')->get();
         foreach ($answers as $key => &$answer) {
@@ -124,7 +138,8 @@ class SubjectController extends Controller
         return response()->json(compact('answers'));
     }
 
-    public function getCompanyAnswers(Request $request, $id) {
+    public function getCompanyAnswers(Request $request, $id)
+    {
         $company = Company::findOrFail($id);
         $user = $company->users()->first();
 

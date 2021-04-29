@@ -15,7 +15,8 @@ class Answer extends Model
     ];
 
     public $casts = [
-        'yes_no' => 'integer'
+        'yes_no' => 'integer',
+        'upload' => 'array'
     ];
 
     public function subject()
