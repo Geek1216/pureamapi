@@ -90,13 +90,13 @@ class CompanyController extends Controller
 
     public function submit(Request $request, $id)
     {
-        Company::submitAnswers($id);
         $company = Company::find($id)->first();
         $users = $company->users;
         foreach ($users as $user) {
-            $email = $user['email'];
-            Mail::to($email)->send(new CompanyCompleteMail($company['name']));
+            $email = $user->email;
+            Mail::to($email)->send(new CompanySubmitMail($company['name']));
         }
+        Company::submitAnswers($id);
         return response()->json([
             'message' => 'Submitted Successfully',
         ]);
