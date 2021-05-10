@@ -38,6 +38,8 @@ class CompanyController extends Controller
 
     public function store(Request $request)
     {
+
+        
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'private' => 'required'
@@ -57,7 +59,10 @@ class CompanyController extends Controller
         foreach ($managers as $key => $manager) {
             $user = $company->users()->create([
                 'name' => $manager['name'],
+                'first_name' => $manager['first_name'],
+                'last_name' => $manager['last_name'],
                 'email' => $manager['email'],
+                'mobile' => $manager['mobile'],
                 'password' => bcrypt('password')
             ]);
 
